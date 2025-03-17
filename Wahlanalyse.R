@@ -1751,5 +1751,5 @@ grid.arrange(p_absolute, p_diff, ncol = 1, heights = c(3, 1))
 
 
 #' Nach dem Simulationsmodell hätten die Grünen ohne den Briefkasten- und Haustürwahlkampf 0,5% weniger Stimmanteile gehabt.
-#'
+
 
