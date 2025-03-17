@@ -751,7 +751,7 @@ totals <- btw %>%
   pivot_longer(cols = everything(), names_to = "Party", values_to = "Total")
 
 # Create the bar chart
-p1 <- totals %>% filter(Party != "Gültig") %>%
+p_absolut <- totals %>% filter(Party != "Gültig") %>%
   mutate(Party = factor(Party,levels = c("SPD","CDU","AfD","Grüne","Linke","FDP","Volt","Sonstige"))) %>%
  ggplot( aes(x = Party, y = Total, fill = Party)) +
   geom_bar(stat = "identity", show.legend=FALSE) +
@@ -783,7 +783,7 @@ totals <- btw %>%
   pivot_longer(cols = everything(), names_to = "Party", values_to = "Total")
 
 # Create the bar chart
-p2 <- totals %>% filter(Party != "Gültig") %>%
+p_diff <- totals %>% filter(Party != "Gültig") %>%
   mutate(Party = factor(Party,levels = c("SPD","CDU","AfD","Grüne","Linke","FDP","Volt","Sonstige"))) %>%
   ggplot( aes(x = Party, y = Total, fill = Party)) +
   geom_bar(stat = "identity", show.legend=FALSE) +
@@ -798,7 +798,7 @@ p2 <- totals %>% filter(Party != "Gültig") %>%
                                 "Grüne"="green", "FDP"="#FFCC00","Volt"="purple"))
 
 # Anordnen der Plots in einem 1x2-Raster 
-grid.arrange(p1, p2, ncol = 1, heights = c(1.5, 1))
+grid.arrange(p_absolut, p_diff, ncol = 1, heights = c(1.5, 1))
 
 
 
