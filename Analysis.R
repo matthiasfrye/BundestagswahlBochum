@@ -71,6 +71,35 @@
 #' 
 #+ echo=FALSE, warning=FALSE, message=FALSE,include=FALSE
 
+#load tidyverse and other packages
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("dslabs")) install.packages("dslabs")
+if (!require("ggthemes")) install.packages("ggthemes")
+if (!require("ggrepel")) install.packages("ggrepel")
+if (!require("gridExtra")) install.packages("gridExtra")
+if (!require("titanic")) install.packages("titanic")
+if (!require("gtools")) install.packages("gtools")
+if (!require("rvest")) install.packages("rvest")
+if (!require("purrr")) install.packages("purrr")
+if (!require("lubridate")) install.packages("lubridate")
+if (!require("tidyr")) install.packages("tidyr")
+if (!require("scales")) install.packages("scales")
+if (!require("tidytext")) install.packages("tidytext")
+if (!require("pdftools")) install.packages("pdftools")
+if (!require("mosaic")) install.packages("mosaic")
+if (!require("readr")) install.packages("readr")
+if (!require("gplots")) install.packages("gplots")
+if (!require("readxl")) install.packages("readxl")
+if (!require("rmarkdown")) install.packages("rmarkdown")
+if (!require("sf")) install.packages("sf")
+if (!require("rnaturalearth")) install.packages("rnaturalearth")
+if (!require("geodata")) install.packages("geodata")
+if (!require("tidygeocoder")) install.packages("tidygeocoder")
+if (!require("st")) install.packages("st")
+if (!require("osmdata")) install.packages("osmdata")
+if (!require("osmextract")) install.packages("osmextract")
+
+# now load the libraries
 library(tidyverse) #load also ggplot2
 library(dslabs)
 library(ggthemes)
@@ -87,12 +116,11 @@ library(tidytext)
 library(pdftools)
 
 
-library(mosaic) # Diesen Befehl bei jeder Session am Anfang ausführen
+library(mosaic) 
 library(readr)
 library(gplots)
 library(readxl)
 library(rmarkdown)
-
 
 library(sf)
 library(rnaturalearth)
@@ -102,9 +130,8 @@ library(st)
 library(osmdata)
 library(osmextract)
 
+# set working directory
 setwd("~/Documents/GoogleDrive/Harvard/LearningR/BundestagswahlBochum")
-
-
 
 
 # Wahlergebnise 2025
@@ -123,16 +150,16 @@ filename <- "Open-Data-05911000-Wahl-zum-Deutschen-Bundestag-Wahlbezirk.csv"
 btw25 <- read_delim(filename, delim=";", escape_double = FALSE, trim_ws = TRUE)
  
 
-# Gesamtergebnis prüfen
-btw25 %>%  
-  summarize(Berechtigt=sum(A, na.rm=T),
-            Gültig=sum(F),
-            SPD=sum(F1), 
-            CDU=sum(F2),
-            AfD=sum(F5),
-            Grüne=sum(F3),
-            Linke=sum(F6),
-            Volt=sum(F12))
+# # Gesamtergebnis prüfen
+# btw25 %>%  
+#   summarize(Berechtigt=sum(A, na.rm=T),
+#             Gültig=sum(F),
+#             SPD=sum(F1), 
+#             CDU=sum(F2),
+#             AfD=sum(F5),
+#             Grüne=sum(F3),
+#             Linke=sum(F6),
+#             Volt=sum(F12))
 
 # Daten laden und Kommunalbezirk, Stadtbezirk berechnen
 dat25 <- btw25  %>%
@@ -154,15 +181,15 @@ dat25 <- btw25  %>%
                Stadtbezirk=substring(Kommunalbezirk, 1, 1)) %>% 
        select(Wahl,Stimmbezirk,Kommunalbezirk,Stadtbezirk,Berechtigt,Gültig,SPD,CDU,FDP,Grüne,AfD,Linke,Volt)
 
-# Gesamtergebnis prüfen
-dat25 %>%  
-summarize(Gültig=sum(Gültig),
-          SPD=sum(SPD), 
-          CDU=sum(CDU),
-          AfD=sum(AfD),
-          Grüne=sum(Grüne),
-          Linke=sum(Linke),
-          Volt=sum(Volt))
+# # Gesamtergebnis prüfen
+# dat25 %>%  
+# summarize(Gültig=sum(Gültig),
+#           SPD=sum(SPD), 
+#           CDU=sum(CDU),
+#           AfD=sum(AfD),
+#           Grüne=sum(Grüne),
+#           Linke=sum(Linke),
+#           Volt=sum(Volt))
 
 # Summe der gültigen Stimmen der Wahllokale und der Stimmen aus der Briefwahl bilden
 Kommunalbezirk25 <- dat25 %>% 
@@ -178,10 +205,10 @@ Kommunalbezirk25 <- dat25 %>%
             Volt_kommunal=sum(ifelse(Stimmbezirk >= 9000,Volt,0)),
             .groups = "keep")
 
-# Überprüfung der Korrektheit der Aggregation
-Kommunalbezirk25 %>% filter(Kommunalbezirk=="10")
-dat25 %>%  filter((Kommunalbezirk=="10") & (Stimmbezirk >= 9000))
-dat25 %>%  filter((Kommunalbezirk=="10") & (Stimmbezirk < 9000))
+# # Überprüfung der Korrektheit der Aggregation
+# Kommunalbezirk25 %>% filter(Kommunalbezirk=="10")
+# dat25 %>%  filter((Kommunalbezirk=="10") & (Stimmbezirk >= 9000))
+# dat25 %>%  filter((Kommunalbezirk=="10") & (Stimmbezirk < 9000))
 
 # Verteilung der Briefwahlstimmen eines jeden Kommunalbezirks auf die Stimmen der Wahllokale
 dat25 <- dat25 %>%
@@ -562,7 +589,7 @@ Gymnasialempfehlung <- tab[21:48] %>%
   setNames(the_names) %>%
   mutate_at(-1, parse_number)
 
-#Ergebnisse anpassen
+# Ergebnisse anpassen
 Gymnasialempfehlung <- Gymnasialempfehlung %>%
   mutate(Gymnasialempfehlung = Gymnasialempfehlung/10) %>%
   select(Statistikbezirk, Gymnasialempfehlung)
@@ -676,6 +703,8 @@ Wahlkampf <- read_excel("Strassenverzeichnis_Bundestagswahl_2025_Stand_23-02-25 
                                       "skip", "skip", "skip", "skip", "text", 
                                       "skip", "text", "skip", "skip", "skip", 
                                       "skip", "skip", "skip", "skip", "skip"))
+
+# xxx this is not yet working properly - needs checking
 suppressWarnings({
   Wahlkampf <- Wahlkampf %>% 
     mutate(`Hausnr. gerade von` = parse_number(`Hausnr. gerade von`))
