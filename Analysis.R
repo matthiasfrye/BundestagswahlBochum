@@ -693,6 +693,7 @@ bochum_residential$housenumber <- as.numeric(gsub("[^0-9]", "", bochum_residenti
 
 
 
+
 # Wahlkampfdaten einlesen
 
 # Wahlkampf <- read_excel("Wahlkampf.xlsx")
