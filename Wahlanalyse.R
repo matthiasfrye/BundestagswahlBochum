@@ -7,7 +7,7 @@
 # /** Combined R Script and R Markdown                                               **/
 # /**                                                                                **/
 # /** generate .pdf and .Rmd files with                                              **/
-# /**    rmarkdown::render("Analysis.R",clean=FALSE)                                 **/
+# /**    rmarkdown::render("Wahlanalyse.R",clean=FALSE)                              **/
 # /**                                                                                **/
 # /************************************************************************************/
 # /************************************************************************************/
@@ -220,7 +220,8 @@ dat25 <- dat25 %>%
          Grüne_all = ifelse(Stimmbezirk < 9000, Grüne + Berechtigt/Berechtigt_lokal * Grüne_kommunal, 0),
          AfD_all = ifelse(Stimmbezirk < 9000, AfD + Berechtigt/Berechtigt_lokal * AfD_kommunal, 0),
          Linke_all = ifelse(Stimmbezirk < 9000, Linke + Berechtigt/Berechtigt_lokal * Linke_kommunal, 0),
-         Volt_all = ifelse(Stimmbezirk < 9000, Volt + Berechtigt/Berechtigt_lokal * Volt_kommunal, 0))
+          Volt_all = ifelse(Stimmbezirk < 9000, Volt + Berechtigt/Berechtigt_lokal * Volt_kommunal, 0))
+
 
 # # Überprüfung der Korrektheit der Verteilung
 # dat25 %>%  filter(Kommunalbezirk=="10") %>%
@@ -320,6 +321,8 @@ dat21 <- dat21 %>%
          AfD_all = ifelse(Stimmbezirk < 9000, AfD + Berechtigt/Berechtigt_lokal * AfD_kommunal, 0),
          Linke_all = ifelse(Stimmbezirk < 9000, Linke + Berechtigt/Berechtigt_lokal * Linke_kommunal, 0),
          Volt_all = ifelse(Stimmbezirk < 9000, Volt + Berechtigt/Berechtigt_lokal * Volt_kommunal, 0))
+
+
 
 # # Überprüfung der Korrektheit der Verteilung         
 # dat21 %>%  filter(Kommunalbezirk=="10") %>%
@@ -606,12 +609,12 @@ btw <- btw %>%
 ###### Geodaten laden
 
 
-# Umrisse von Bochum
-bochum_map <- gadm(country = "Germany", path = "./", level = 4)
+#load stadtbezirke as shapefile
+stadtbezirke <- st_read("Stadtbezirke/Stadtbezirke.shp")
+# convert to sf object
+sf_stadtbezirke <- st_transform(stadtbezirke, crs = 4326)
 
-# Convert into simple file
-sf_bochum <- sf::st_as_sf(bochum_map)
-sf_bochum <- sf_bochum %>% filter(NAME_2=="Bochum")
+
 
 # Wahllokale mit Adressen
 
@@ -834,7 +837,7 @@ grid.arrange(p_absolut, p_diff, ncol = 1, heights = c(1.5, 1))
 #' 
 #' ### Auswertung nach Briefwahl und Wahllokal
 #'
-#+ echo=FALSE, fig.width=7, fig.height=2.1
+#+ echo=FALSE, fig.width=7, fig.height=2
 
 
 totals <- dat25 %>%
@@ -848,23 +851,28 @@ totals <- dat25 %>%
 # Create the bar chart
 totals %>%
   mutate(
-    Wahltyp = factor(Wahltyp, levels = c("Gültig gesamt", "Wahllokal", "Briefwahl" )),
+    Wahltyp = factor(Wahltyp, levels = c("Briefwahl", "Wahllokal", "Gültig gesamt" )),
     Percentage = Total / Total[Wahltyp == "Gültig gesamt"] * 100
   ) %>%
   ggplot(aes(x = Wahltyp, y = Total)) +
-  geom_bar(stat = "identity", fill = "#888888", show.legend = FALSE) +
+  geom_bar(stat = "identity", fill = "#888888", show.legend = FALSE, width = .7) +
   scale_y_continuous(
     labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE), 
-    expand = expansion(mult = c(0, 0.1))  # Add 5% padding to the top
+    expand = expansion(mult = c(0, 0.2))  # Add 20% padding to the right
   ) +
   geom_text(
     aes(label = paste0(format(floor(Total), big.mark = ".", decimal.mark = ","), 
-                       " (", round(Percentage, 0), "%)")),
-    vjust = -0.5,
+                       "\n(", round(Percentage, 0), "%)")),
+    hjust = -.3, # Center text vertically within the bars
     size = 3
   ) +  # Add percentages for specific bars
   labs(x = "", y = "") +
-  theme_minimal()
+  theme_minimal() +
+   coord_flip()
+
+
+
+
 
 #' 
 #' Die folgende Grafik zeigt die Wahlergebnisse aus der Briefwahl im Vergleich zu den Stimmen, die am Wahltag in den 
@@ -959,48 +967,48 @@ size_Linke <- 11.5
 size_FDP <- 3.5 
 
 p_CDU <- ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = CDU_p25), alpha = geo_alpha1, col="black", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
   scale_size_continuous(range = c(0.1, geo_size*size_CDU)) +
   annotate("text", x = min(btw$long)+.08, y = min(btw$lat) - 0.015, label = "CDU", size = 3.5)
 p_SPD <- ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = SPD_p25), alpha = geo_alpha1, col="red2", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
   scale_size_continuous(range = c(0.1, geo_size*size_SPD)) +
   annotate("text", x = min(btw$long)+.08, y = min(btw$lat) - 0.015, label = "SPD", size = 3.5)
 p_AfD <- ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = AfD_p25), alpha = geo_alpha2, col="#4169E1", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
   scale_size_continuous(range = c(0.1, geo_size*size_AfD)) +
   annotate("text", x = min(btw$long)+.08, y = min(btw$lat) - 0.015, label = "AfD", size = 3.5)
 p_Grüne <- ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = Grüne_p25), alpha = geo_alpha2, col="forestgreen", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
   scale_size_continuous(range = c(0.1, geo_size*size_Grüne))+ # Adjust point size range here
   annotate("text", x = min(btw$long)+.08, y = min(btw$lat) - 0.015, label = "Grüne", size = 3.5)
 p_Linke <- ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = Linke_p25), alpha = geo_alpha2, col="deeppink", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
   scale_size_continuous(range = c(0.1, geo_size*size_Linke))+ # Adjust point size range here
   annotate("text", x = min(btw$long)+.08, y = min(btw$lat) - 0.015, label = "Linke", size = 3.5)
 p_FDP <- ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = FDP_p25), alpha = 1, col="#DDAA00", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
   scale_size_continuous(range = c(0.1, geo_size*size_FDP))+ # Adjust point size range here
   annotate("text", x = min(btw$long)+.08, y = min(btw$lat) - 0.015, label = "FDP", size = 3.5)
-
+  
 grid.arrange(p_CDU, p_SPD, p_AfD, p_Grüne, p_Linke, p_FDP, ncol = 2)
 
 
@@ -1040,7 +1048,7 @@ size_plus <- .7
 
 p_CDU <- 
   ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = CDU_ag), alpha = geo_alpha2, col="black", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
@@ -1049,7 +1057,7 @@ p_CDU <-
 
 p_SPD <- 
   ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = -SPD_av), alpha = geo_alpha2, col="red2", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
@@ -1059,7 +1067,7 @@ p_SPD <-
 
 p_AfD <- 
   ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = AfD_ag), alpha = geo_alpha2, col="#4169E1", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
@@ -1067,7 +1075,7 @@ p_AfD <-
   scale_size_continuous(range = c(0.1, geo_size*size_AfD)) 
 
 p_Grüne <-   ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = -Grüne_av), alpha = geo_alpha2, col="forestgreen", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
@@ -1075,7 +1083,7 @@ p_Grüne <-   ggplot(data = btw) +
   scale_size_continuous(range = c(0.1, geo_size*size_Grüne)) 
 
 p_Linke <-   ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = Linke_ag), alpha = geo_alpha2, col="deeppink", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
@@ -1084,7 +1092,7 @@ p_Linke <-   ggplot(data = btw) +
 
 p_FDP <- 
   ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = -FDP_av), alpha = geo_alpha2, col="#DDAA00", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
@@ -1512,7 +1520,7 @@ grid.arrange(p_Ausländische_Bevölkerung, p_Alt_Jung_Quotient, p_Arbeitslose,
 #' Die folgende Grafik zeigt die Anzahl der Gebäude in der Stadt Bochum gesamt, sowie die Anzahl der Gebäude, die im Briefkastenwahlkampf beziehungsweise
 #' Haustürwahlkampf abgedeckt wurden.
 #' 
-#+ echo=FALSE, fig.width=7, fig.height=2.1
+#+ echo=FALSE, fig.width=7, fig.height=2
 
 
 totals <- btw %>%
@@ -1525,23 +1533,27 @@ totals <- btw %>%
 # Create the bar chart
 totals %>%
   mutate(
-    Aktivität = factor(Aktivität, levels = c("Gebäude gesamt", "Briefkastenwahlkampf", "Haustürwahlkampf")),
+    Aktivität = factor(Aktivität, levels = c( "Haustürwahlkampf", "Briefkastenwahlkampf", "Gebäude gesamt")),
     Percentage = Total / Total[Aktivität == "Gebäude gesamt"] * 100
   ) %>%
   ggplot(aes(x = Aktivität, y = Total)) +
-  geom_bar(stat = "identity", fill = "#888888", show.legend = FALSE) +
+  geom_bar(stat = "identity", fill = "#888888", show.legend = FALSE, width = .7) +
   scale_y_continuous(
     labels = function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE), 
-    expand = expansion(mult = c(0, 0.1))  # Add 5% padding to the top
+    expand = expansion(mult = c(0, 0.2))  # Add 5% padding to the top
   ) +
   geom_text(
     aes(label = paste0(format(floor(Total), big.mark = ".", decimal.mark = ","), 
-                       " (", round(Percentage, 0), "%)")),
-    vjust = -0.5,
+                       "\n(", round(Percentage, 0), "%)")),
+    hjust = -0.3,
     size = 3
   ) +  # Add percentages for specific bars
   labs(x = "", y = "") +
-  theme_minimal()
+  theme_minimal()+
+  coord_flip()
+
+
+
 
 #'
 #' Die folgenden Karten zeigen die prozentuale Abdeckung der Gebäude im Wahlkampf und die
@@ -1558,7 +1570,7 @@ btw <- btw %>%
          Wahlkampf_p = (Haustür+Briefkasten) / Gebäude*100)
 
 p_Brief <- ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = Briefkasten_p), alpha = geo_alpha2, col="black", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
@@ -1566,7 +1578,7 @@ p_Brief <- ggplot(data = btw) +
   scale_size_continuous(range = c(0.1, max(btw$Briefkasten_p)*.03)) 
 
 p_Haus <- ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = Haustür_p), alpha = geo_alpha2, col="black", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
@@ -1574,7 +1586,7 @@ p_Haus <- ggplot(data = btw) +
   scale_size_continuous(range = c(0.1, max(btw$Haustür_p)*.03)) 
 
 p_Wahlkampf <- ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = Wahlkampf_p), alpha = geo_alpha2, col="black", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
@@ -1582,7 +1594,7 @@ p_Wahlkampf <- ggplot(data = btw) +
   scale_size_continuous(range = c(0.1, max(btw$Wahlkampf_p)*.03)) 
 
 p_Grüne <- ggplot(data = btw) +
-  geom_sf(data = sf_bochum, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
+  geom_sf(data = sf_stadtbezirke, alpha = 1, linewidth = .1, color = "black", fill = "#eeeeee") + 
   geom_point(aes(x = long, y = lat, size = -Grüne_rv), alpha = geo_alpha2, col="forestgreen", shape=geo_shape) +
   theme_void() +
   theme(legend.position = "none")+
@@ -1674,12 +1686,11 @@ grid.arrange(p_Brief, p_Haus, p_Wahlkampf, ncol = 2)
 
 
 # Lineare Regression Modell für relative Stimmverluste abhängig von Briefkasten und Haustürwahhlkampf
-model <- lm(Grüne_rv ~ Briefkasten_p + Haustür_p, data = btw)
+model <- lm(Grüne_rv ~ Wahlkampf_p, data = btw)
 
 # Simulierte relative Stimmverluste je Stimmbezirk, abhängig von Aktivität in Stimmbezirk
 btw <- btw %>% mutate(Grüne_rv_sim = Grüne_rv -
-                                       coef(model)["Briefkasten_p"]* btw$Briefkasten_p -
-                                       coef(model)["Haustür_p"]* btw$Haustür_p,
+                        coef(model)["Wahlkampf_p"]* btw$Wahlkampf_p,
                       Grüne_sim = Grüne_a21 + Grüne_a21 * Grüne_rv_sim/100)
 
 Grüne_sim <- sum(btw$Grüne_sim) / sum(btw$Gültig_a25)
@@ -1724,7 +1735,7 @@ totals <- btw %>%
     CDU = 0.00049,
     FDP = round(c_FDP / sum_abs * Grüne_diff)/Gültig,
     AfD = 0.00049,
-    Linke = round(c_Linke / sum_abs * Grüne_diff)/Gültig,
+    Linke = (c_Linke / sum_abs * Grüne_diff)/Gültig,
     Grüne = Grüne_diff/Gültig,
     Volt = round(c_Volt / sum_abs * Grüne_diff)/Gültig,
     Sonstige = 0.00049
@@ -1751,5 +1762,4 @@ grid.arrange(p_absolute, p_diff, ncol = 1, heights = c(3, 1))
 
 
 #' Nach dem Simulationsmodell hätten die Grünen ohne den Briefkasten- und Haustürwahlkampf 0,5% weniger Stimmanteile gehabt.
-
 
